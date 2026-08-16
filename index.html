@@ -370,7 +370,14 @@
 		}
 
 		.bot-field {
-			display: none;
+			position: absolute;
+			overflow: hidden;
+			clip: rect(0 0 0 0);
+			height: 1px;
+			width: 1px;
+			margin: -1px;
+			padding: 0;
+			border: 0;
 		}
 
 		.log {
@@ -642,7 +649,7 @@
 
 		<section class="content">
 			<div class="stack">
-				<form class="card" id="diagnosticForm" name="diagnostic-medialo" method="POST" action="/" data-netlify="true" netlify-honeypot="bot-field">
+				<form class="card" id="diagnosticForm" name="diagnostic-medialo" method="POST" action="/" data-netlify="true" netlify netlify-honeypot="bot-field">
 					<input type="hidden" name="form-name" value="diagnostic-medialo" />
 					<input type="hidden" name="mode" id="submission-mode" value="client" />
 					<input type="hidden" name="clientTimestamp" id="client-timestamp" />
@@ -1238,7 +1245,7 @@
 					async function sendResponseToNetlify() {
 						updateSubmissionMeta();
 
-						const response = await fetch(diagnosticForm.action || "/", {
+						const response = await fetch("/", {
 							method: "POST",
 							headers: {
 								"Content-Type": "application/x-www-form-urlencoded"
