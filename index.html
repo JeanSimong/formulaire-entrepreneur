@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Diagnostic client - Medialo</title>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--bg-soft: #111c3a;
+			--panel: rgba(15, 23, 42, 0.72);
+			--panel-strong: rgba(15, 23, 42, 0.92);
+			--line: rgba(255, 255, 255, 0.12);
+			--text: #e5eefc;
+			--muted: #a8b6d6;
+			--accent: #7dd3fc;
+			--accent-2: #fbbf24;
+			--good: #34d399;
+			--shadow: 0 28px 80px rgba(2, 6, 23, 0.48);
+			--radius-xl: 28px;
+			--radius-lg: 20px;
+			--radius-md: 16px;
+			--radius-sm: 12px;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html {
+			scroll-behavior: smooth;
+		}
+
+		body {
+			margin: 0;
+			font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+			color: var(--text);
+			background:
+				radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 32%),
+				radial-gradient(circle at top right, rgba(251, 191, 36, 0.16), transparent 24%),
+				linear-gradient(180deg, #09101f 0%, #0f172a 30%, #0b1220 100%);
+			min-height: 100vh;
+		}
+
+		body::before {
+			content: "";
+			position: fixed;
+			inset: 0;
+			pointer-events: none;
+			background-image:
+				linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+				linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+			background-size: 52px 52px;
+			mask-image: linear-gradient(180deg, rgba(0,0,0,0.7), transparent 92%);
+			opacity: 0.35;
+		}
+
+		.page {
+			position: relative;
+			width: min(1180px, calc(100% - 32px));
+			margin: 0 auto;
+			padding: 28px 0 56px;
+		}
+
+		body.client-mode .admin-only {
+			display: none !important;
+		}
+
+		body.admin-mode .client-only {
+			display: none !important;
+		}
+
+		.hero {
+			display: grid;
+			grid-template-columns: 1.4fr 0.95fr;
+			gap: 22px;
+			align-items: stretch;
+			margin-top: 12px;
+		}
+
+		.hero-copy,
+		.hero-side,
+		.card,
+		.summary {
+			background: var(--panel);
+			border: 1px solid var(--line);
+			box-shadow: var(--shadow);
+			backdrop-filter: blur(18px);
+		}
+
+		.hero-copy {
+			border-radius: var(--radius-xl);
+			padding: 34px;
+			overflow: hidden;
+			position: relative;
+		}
+
+		.hero-copy::after {
+			content: "";
+			position: absolute;
+			top: -80px;
+			right: -90px;
+			width: 250px;
+			height: 250px;
+			border-radius: 50%;
+			background: radial-gradient(circle, rgba(125, 211, 252, 0.28), transparent 68%);
+			filter: blur(8px);
+		}
+
+		.eyebrow {
+			display: inline-flex;
+			gap: 10px;
+			align-items: center;
+			padding: 8px 14px;
+			border-radius: 999px;
+			border: 1px solid rgba(125, 211, 252, 0.28);
+			background: rgba(125, 211, 252, 0.08);
+			color: #c7f0ff;
+			font-size: 0.84rem;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			margin-bottom: 18px;
+		}
+
+		h1 {
+			margin: 0;
+			font-size: clamp(2.1rem, 4vw, 4rem);
+			line-height: 0.98;
+			letter-spacing: -0.05em;
+			max-width: 12ch;
+		}
+
+		.lead {
+			margin: 18px 0 0;
+			max-width: 62ch;
+			font-size: 1.05rem;
+			line-height: 1.7;
+			color: var(--muted);
+		}
+
+		.metrics {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 14px;
+			margin-top: 26px;
+		}
+
+		.metric {
+			border-radius: var(--radius-lg);
+			padding: 16px;
+			background: rgba(8, 15, 31, 0.55);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
+
+		.metric strong {
+			display: block;
+			font-size: 1.35rem;
+			color: #fff;
+		}
+
+		.metric span {
+			color: var(--muted);
+			font-size: 0.92rem;
+		}
+
+		.hero-side {
+			border-radius: var(--radius-xl);
+			padding: 24px;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			background:
+				linear-gradient(180deg, rgba(17, 28, 58, 0.95), rgba(10, 16, 32, 0.88)),
+				radial-gradient(circle at top, rgba(251, 191, 36, 0.12), transparent 40%);
+		}
+
+		.side-box {
+			padding: 18px;
+			border-radius: var(--radius-lg);
+			background: rgba(255, 255, 255, 0.04);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			margin-top: 14px;
+		}
+
+		.side-box h2,
+		.section-title h2,
+		.summary h2 {
+			margin: 0;
+			font-size: 1.18rem;
+			letter-spacing: -0.03em;
+		}
+
+		.side-box p,
+		.summary p,
+		.section-title p {
+			margin: 8px 0 0;
+			color: var(--muted);
+			line-height: 1.65;
+		}
+
+		.tag-row {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-top: 16px;
+		}
+
+		.tag {
+			border-radius: 999px;
+			padding: 9px 12px;
+			font-size: 0.88rem;
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			color: #dbe7ff;
+		}
+
+		.content {
+			display: grid;
+			grid-template-columns: minmax(0, 1.35fr) 340px;
+			gap: 22px;
+			align-items: start;
+			margin-top: 22px;
+		}
+
+		.stack {
+			display: grid;
+			gap: 18px;
+		}
+
+		.section-title {
+			margin-bottom: 10px;
+		}
+
+		.card {
+			border-radius: var(--radius-xl);
+			padding: 24px;
+			animation: rise 0.7s ease both;
+		}
+
+		.card:nth-child(2) { animation-delay: 0.05s; }
+		.card:nth-child(3) { animation-delay: 0.1s; }
+		.card:nth-child(4) { animation-delay: 0.15s; }
+
+		.questions {
+			display: grid;
+			gap: 16px;
+			margin-top: 18px;
+		}
+
+		.question {
+			padding: 18px;
+			border-radius: var(--radius-lg);
+			background: rgba(255, 255, 255, 0.04);
+			border: 1px solid rgba(255, 255, 255, 0.07);
+		}
+
+		.question header {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			align-items: baseline;
+			margin-bottom: 12px;
+		}
+
+		.question h3 {
+			margin: 0;
+			font-size: 1rem;
+			letter-spacing: -0.02em;
+		}
+
+		.question small {
+			color: var(--muted);
+		}
+
+		.options {
+			display: grid;
+			gap: 10px;
+		}
+
+		.option {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px 14px;
+			border-radius: var(--radius-md);
+			background: rgba(8, 15, 31, 0.65);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			cursor: pointer;
+			transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+		}
+
+		.option:hover {
+			transform: translateY(-1px);
+			border-color: rgba(125, 211, 252, 0.35);
+			background: rgba(11, 20, 40, 0.88);
+		}
+
+		.option input {
+			accent-color: var(--accent);
+			width: 18px;
+			height: 18px;
+			flex: 0 0 auto;
+		}
+
+		.option span {
+			color: #edf4ff;
+			line-height: 1.45;
+		}
+
+		textarea,
+		input[type="text"] {
+			width: 100%;
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: var(--radius-md);
+			background: rgba(8, 15, 31, 0.75);
+			color: var(--text);
+			padding: 13px 14px;
+			font: inherit;
+			outline: none;
+			transition: border-color 0.18s ease, box-shadow 0.18s ease;
+		}
+
+		textarea:focus,
+		input[type="text"]:focus {
+			border-color: rgba(125, 211, 252, 0.45);
+			box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.1);
+		}
+
+		textarea {
+			min-height: 110px;
+			resize: vertical;
+		}
+
+		.summary {
+			position: sticky;
+			top: 18px;
+			border-radius: var(--radius-xl);
+			padding: 22px;
+			display: grid;
+			gap: 16px;
+			background: var(--panel-strong);
+		}
+
+		.summary-card {
+			padding: 16px;
+			border-radius: var(--radius-lg);
+			background: rgba(255, 255, 255, 0.04);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
+
+		.collector {
+			display: grid;
+			gap: 12px;
+			padding: 16px;
+			border-radius: var(--radius-lg);
+			background: rgba(255, 255, 255, 0.04);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
+
+		.collector label {
+			display: grid;
+			gap: 8px;
+			font-size: 0.92rem;
+			color: #dce8ff;
+		}
+
+		.collector small,
+		.log-entry small {
+			color: var(--muted);
+		}
+
+		.bot-field {
+			display: none;
+		}
+
+		.log {
+			display: grid;
+			gap: 10px;
+			padding: 16px;
+			border-radius: var(--radius-lg);
+			background: rgba(255, 255, 255, 0.04);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
+
+		.log-entry {
+			padding: 12px 14px;
+			border-radius: var(--radius-md);
+			background: rgba(8, 15, 31, 0.65);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
+
+		.log-entry strong {
+			display: block;
+			margin-bottom: 4px;
+		}
+
+		.summary-result {
+			margin-top: 14px;
+			padding: 14px;
+			border-radius: var(--radius-lg);
+			background: rgba(8, 15, 31, 0.66);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
+
+		.summary-result h3 {
+			margin: 0 0 10px;
+			font-size: 0.95rem;
+		}
+
+		.summary-result ul {
+			margin: 0;
+			padding-left: 18px;
+			color: var(--muted);
+			line-height: 1.6;
+		}
+
+		.status-row {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			align-items: center;
+			margin-top: 12px;
+		}
+
+		.summary-list {
+			margin: 12px 0 0;
+			padding: 0;
+			list-style: none;
+			display: grid;
+			gap: 10px;
+		}
+
+		.summary-list li {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			color: #dce8ff;
+			font-size: 0.95rem;
+			padding-bottom: 10px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+		}
+
+		.summary-list li:last-child {
+			border-bottom: 0;
+			padding-bottom: 0;
+		}
+
+		.score {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 42px;
+			height: 42px;
+			border-radius: 999px;
+			background: rgba(125, 211, 252, 0.12);
+			color: #d7f3ff;
+			font-weight: 700;
+		}
+
+		.cta {
+			display: grid;
+			gap: 10px;
+			padding: 18px;
+			border-radius: var(--radius-lg);
+			background: linear-gradient(180deg, rgba(125, 211, 252, 0.12), rgba(15, 23, 42, 0.5));
+			border: 1px solid rgba(125, 211, 252, 0.2);
+		}
+
+		.submit-feedback {
+			display: none;
+			margin-top: 10px;
+			padding: 12px 14px;
+			border-radius: var(--radius-md);
+			font-size: 0.93rem;
+			line-height: 1.5;
+		}
+
+		.submit-feedback.visible {
+			display: block;
+		}
+
+		.submit-feedback.success {
+			background: rgba(52, 211, 153, 0.14);
+			border: 1px solid rgba(52, 211, 153, 0.4);
+			color: #ccffe9;
+		}
+
+		.submit-feedback.error {
+			background: rgba(248, 113, 113, 0.14);
+			border: 1px solid rgba(248, 113, 113, 0.42);
+			color: #ffd2d2;
+		}
+
+		.button-row {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.btn {
+			appearance: none;
+			border: 0;
+			border-radius: 14px;
+			padding: 12px 16px;
+			font: inherit;
+			font-weight: 700;
+			cursor: pointer;
+			transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+		}
+
+		.btn:hover {
+			transform: translateY(-1px);
+		}
+
+		.btn-primary {
+			background: linear-gradient(135deg, var(--accent), #c2f2ff);
+			color: #082033;
+		}
+
+		.btn-secondary {
+			background: rgba(255, 255, 255, 0.08);
+			color: var(--text);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
+
+		.footnote {
+			color: var(--muted);
+			font-size: 0.92rem;
+			line-height: 1.6;
+		}
+
+		.pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			padding: 7px 10px;
+			border-radius: 999px;
+			background: rgba(52, 211, 153, 0.12);
+			color: #b8ffe2;
+			font-size: 0.86rem;
+			border: 1px solid rgba(52, 211, 153, 0.22);
+		}
+
+		@keyframes rise {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		@media (max-width: 1024px) {
+			.hero,
+			.content {
+				grid-template-columns: 1fr;
+			}
+
+			.summary {
+				position: static;
+			}
+		}
+
+		@media (max-width: 720px) {
+			.page {
+				width: min(100% - 20px, 1180px);
+				padding-top: 12px;
+			}
+
+			.hero-copy,
+			.hero-side,
+			.card,
+			.summary {
+				border-radius: 22px;
+				padding: 20px;
+			}
+
+			.metrics {
+				grid-template-columns: 1fr;
+			}
+
+			h1 {
+				max-width: 100%;
+			}
+		}
+	</style>
+</head>
+<body>
+	<main class="page">
+		<section class="hero">
+			<div class="hero-copy">
+				<div class="eyebrow client-only">Questionnaire client confidentiel</div>
+				<div class="eyebrow admin-only">Vue interne de cadrage</div>
+				<h1>Merci de prendre quelques minutes pour décrire vos besoins.</h1>
+				<p class="lead">
+					Ce court questionnaire nous aide à comprendre ce qui fonctionne, ce qui ralentit vos équipes,
+					et ce qui mérite d'être amélioré en priorité. Vos réponses servent à préparer une proposition plus claire et plus utile.
+				</p>
+				<div class="metrics">
+					<div class="metric">
+						<strong>3 min</strong>
+						<span>pour compléter le questionnaire</span>
+					</div>
+					<div class="metric">
+						<strong>100%</strong>
+						<span>des réponses gardées en privé</span>
+					</div>
+					<div class="metric">
+						<strong>Simple</strong>
+						<span>réponse rapide, sans jargon</span>
+					</div>
+				</div>
+			</div>
+
+			<aside class="hero-side">
+				<div>
+					<div class="pill client-only">Réponses envoyées à l'équipe</div>
+					<div class="pill admin-only">Outils internes</div>
+					<div class="side-box">
+						<h2>Pourquoi on vous pose ces questions</h2>
+						<p>
+							Identifier les irritants concrets, comprendre les outils utilisés aujourd'hui, et cerner les priorités d'amélioration.
+						</p>
+					</div>
+					<div class="side-box">
+						<h2>Ce que vos réponses permettent</h2>
+						<div class="tag-row">
+							<span class="tag">Mieux prioriser</span>
+							<span class="tag">Réduire les frictions</span>
+							<span class="tag">Préparer une solution utile</span>
+							<span class="tag">Gagner du temps</span>
+						</div>
+					</div>
+				</div>
+				<div class="footnote">
+					Merci de répondre honnêtement et brièvement. Plus les réponses sont concrètes, plus la recommandation sera pertinente.
+				</div>
+			</aside>
+		</section>
+
+		<section class="content">
+			<div class="stack">
+				<form class="card" id="diagnosticForm" name="diagnostic-medialo" method="POST" action="/" data-netlify="true" netlify-honeypot="bot-field">
+					<input type="hidden" name="form-name" value="diagnostic-medialo" />
+					<input type="hidden" name="mode" id="submission-mode" value="client" />
+					<input type="hidden" name="clientTimestamp" id="client-timestamp" />
+					<input type="hidden" name="page" id="submission-page" />
+					<p class="bot-field">
+						<label>Ne pas remplir ce champ: <input name="bot-field" /></label>
+					</p>
+					<div class="section-title">
+						<h2>Questionnaire de découverte</h2>
+						<p>Réponses courtes. Priorité aux besoins opérationnels et aux irritants réels.</p>
+					</div>
+
+					<div class="questions">
+						<div class="question">
+							<header>
+								<h3>1. Quels processus prennent le plus de temps dans vos opérations aujourd'hui ?</h3>
+								<small>Choix multiples</small>
+							</header>
+							<div class="options">
+								<label class="option"><input id="process-followup" type="checkbox" name="processes" value="Suivi des clients et relances" /><span>Suivi des clients et relances</span></label>
+								<label class="option"><input id="process-sales" type="checkbox" name="processes" value="Gestion des ventes et des opportunités" /><span>Gestion des ventes et des opportunités</span></label>
+								<label class="option"><input id="process-billing" type="checkbox" name="processes" value="Facturation ou paiements" /><span>Facturation ou paiements</span></label>
+								<label class="option"><input id="process-support" type="checkbox" name="processes" value="Support ou service après-vente" /><span>Support ou service après-vente</span></label>
+							</div>
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>2. Qu'est-ce qui coûte trop cher ou trop de temps ?</h3>
+								<small>Réponse ouverte</small>
+							</header>
+							<textarea id="cost-text" name="costText" placeholder="Ex. licences, saisie manuelle, doublons, manque d'automatisation, outil difficile à utiliser..."></textarea>
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>3. Quelles intégrations sont essentielles ?</h3>
+								<small>Entrée libre</small>
+							</header>
+							<input id="integration-text" name="integrationText" type="text" placeholder="Ex. courriel, site web, calendrier, comptabilité, formulaires..." />
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>4. Quel niveau de priorité donnez-vous à une migration ou à une modernisation ?</h3>
+								<small>Une seule option</small>
+							</header>
+							<div class="options">
+								<label class="option"><input id="priority-assess" type="radio" name="priority" value="Évaluer seulement, sans changement immédiat" /><span>Évaluer seulement, sans changement immédiat</span></label>
+								<label class="option"><input id="priority-partial" type="radio" name="priority" value="Remplacer une partie de l'outil actuel" /><span>Remplacer une partie de l'outil actuel</span></label>
+								<label class="option"><input id="priority-full" type="radio" name="priority" value="Préparer une migration complète" /><span>Préparer une migration complète</span></label>
+							</div>
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>5. Quel élément vous semble le plus important à présenter à la direction ?</h3>
+								<small>Réponse courte</small>
+							</header>
+							<input id="pitch-text" name="pitchText" type="text" placeholder="Ex. la réduction des coûts, la rapidité, la clarté du suivi..." />
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>6. Comment évaluez-vous votre satisfaction avec Teddy (horaires, congés, paie) ?</h3>
+								<small>Une seule option</small>
+							</header>
+							<div class="options">
+								<label class="option"><input id="teddy-satisfaction-high" type="radio" name="teddySatisfaction" value="Satisfait: le système répond bien aux besoins" /><span>Satisfait: le système répond bien aux besoins</span></label>
+								<label class="option"><input id="teddy-satisfaction-medium" type="radio" name="teddySatisfaction" value="Mitigé: fonctionne partiellement, avec irritants" /><span>Mitigé: fonctionne partiellement, avec irritants</span></label>
+								<label class="option"><input id="teddy-satisfaction-low" type="radio" name="teddySatisfaction" value="Insatisfait: limitations importantes au quotidien" /><span>Insatisfait: limitations importantes au quotidien</span></label>
+							</div>
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>7. Si vous utilisez Teddy, quels irritants observez-vous le plus ?</h3>
+								<small>Réponse ouverte</small>
+							</header>
+							<textarea id="teddy-pain-text" name="teddyPainText" placeholder="Ex. erreurs de paie, gestion des congés difficile, suivi des horaires incomplet, navigation complexe..."></textarea>
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>8. Le lien avec Desjardins (ou autre outil bancaire) est-il opérationnel ?</h3>
+								<small>Une seule option</small>
+							</header>
+							<div class="options">
+								<label class="option"><input id="desjardins-ok" type="radio" name="desjardinsStatus" value="Oui, le lien est stable" /><span>Oui, le lien est stable</span></label>
+								<label class="option"><input id="desjardins-unstable" type="radio" name="desjardinsStatus" value="Partiellement, avec interruptions" /><span>Partiellement, avec interruptions</span></label>
+								<label class="option"><input id="desjardins-broken" type="radio" name="desjardinsStatus" value="Non, le lien semble perdu ou non fonctionnel" /><span>Non, le lien semble perdu ou non fonctionnel</span></label>
+							</div>
+						</div>
+
+						<div class="question">
+							<header>
+								<h3>9. Détails sur le lien Desjardins et impacts constatés</h3>
+								<small>Réponse ouverte</small>
+							</header>
+							<textarea id="desjardins-text" name="desjardinsText" placeholder="Ex. depuis quand le lien est interrompu, impacts sur la paie/comptabilité, actions déjà tentées..."></textarea>
+						</div>
+					</div>
+
+						<div class="cta client-only" style="margin-top: 18px;">
+							<strong>Envoyer vos réponses</strong>
+							<p class="footnote">Quand vous avez terminé, envoyez le questionnaire pour que l'équipe puisse le relire et préparer la suite.</p>
+							<div class="button-row">
+								<button class="btn btn-primary" type="submit" id="submitResponseButton">Envoyer mes réponses</button>
+							</div>
+							<div class="submit-feedback" id="submitFeedback" role="status" aria-live="polite"></div>
+						</div>
+				</form>
+
+				<article class="card">
+					<div class="section-title">
+						<h2>Plan de présentation</h2>
+						<p>Une structure simple pour structurer la discussion en 10 minutes.</p>
+					</div>
+
+					<div class="questions">
+						<div class="question">
+							<header>
+								<h3>1. Constater</h3>
+								<small>Pourquoi on regarde ça</small>
+							</header>
+							<p class="footnote">La plateforme actuelle peut entraîner des coûts élevés ou limiter certaines pratiques.</p>
+						</div>
+						<div class="question">
+							<header>
+								<h3>2. Mesurer</h3>
+								<small>Ce qui compte vraiment</small>
+							</header>
+							<p class="footnote">Identifier les tâches critiques, les irritants, les intégrations et les coûts réels est essentiel avant de décider.</p>
+						</div>
+						<div class="question">
+							<header>
+								<h3>3. Proposer</h3>
+								<small>Options concrètes</small>
+							</header>
+							<p class="footnote">Selon les besoins, plusieurs options sont possibles: optimisation, alternative open source ou solution sur mesure.</p>
+						</div>
+					</div>
+				</article>
+			</div>
+
+			<aside class="summary admin-only">
+				<div>
+					<h2>Vue interne</h2>
+					<p>Cette section sert à récupérer, synthétiser et partager les réponses du client.</p>
+				</div>
+
+				<div class="summary-card">
+					<span class="pill">Résumé du besoin</span>
+					<ul class="summary-list">
+						<li><span>Coût actuel</span><span class="score">?</span></li>
+						<li><span>Irritants</span><span class="score">?</span></li>
+						<li><span>Intégrations</span><span class="score">?</span></li>
+						<li><span>Priorité</span><span class="score">?</span></li>
+					</ul>
+				</div>
+
+				<div class="collector">
+					<span class="pill">Collecte directe</span>
+					<label>
+						Adresse de réception
+						<input id="recipientEmail" name="recipientEmail" form="diagnosticForm" type="text" placeholder="tonadresse@exemple.com" />
+						<small>Les réponses seront envoyées à cette adresse et gardées dans l'historique local.</small>
+					</label>
+					<div class="button-row">
+							<button class="btn btn-primary" type="submit" form="diagnosticForm" id="submitResponseAdminButton">Envoyer la réponse</button>
+						<button class="btn btn-secondary" type="button" id="copySummaryButton">Copier le résumé</button>
+					</div>
+				</div>
+
+				<div class="cta">
+					<strong>Prochaine étape</strong>
+					<p class="footnote">En mode interne, tu peux exporter, imprimer ou préparer un courriel de suivi à partir des réponses.</p>
+					<div class="button-row">
+						<button class="btn btn-primary" type="button" id="exportPdfButton">Exporter en PDF</button>
+						<button class="btn btn-secondary" type="button" id="emailButton">Préparer le courriel</button>
+						<button class="btn btn-secondary" type="button" id="printButton">Imprimer</button>
+					</div>
+				</div>
+
+					<div class="summary-result" id="liveSummary">
+						<h3>Résumé local</h3>
+						<ul>
+							<li>Réponses non enregistrées</li>
+							<li>Aucune sélection pour le moment</li>
+						</ul>
+					</div>
+
+					<div class="status-row">
+						<span class="pill" id="saveStatus">Sauvegarde locale inactive</span>
+					</div>
+
+					<div class="log">
+						<span class="pill">Historique des réponses</span>
+						<div id="responseLog"></div>
+					</div>
+
+				<p class="footnote">Cette vue est réservée à l'équipe interne. Le client ne voit que le questionnaire et le bouton d'envoi.</p>
+			</aside>
+		</section>
+	</main>
+
+				<script>
+					const STORAGE_KEY = "medialo-diagnostic-local";
+					const RESPONSE_LOG_KEY = "medialo-diagnostic-responses";
+					const urlParams = new URLSearchParams(window.location.search);
+					const mode = urlParams.get("mode") === "admin" ? "admin" : "client";
+					const presetRecipient = urlParams.get("recipient") || urlParams.get("to") || "";
+					document.body.classList.add(`${mode}-mode`);
+					document.title = mode === "admin" ? "Diagnostic client - Medialo (interne)" : "Diagnostic client - Medialo";
+					const diagnosticForm = document.getElementById("diagnosticForm");
+					const questionnaire = document.querySelector(".questions");
+					const liveSummary = document.getElementById("liveSummary");
+					const saveStatus = document.getElementById("saveStatus");
+					const responseLog = document.getElementById("responseLog");
+					const printButton = document.getElementById("printButton");
+					const exportPdfButton = document.getElementById("exportPdfButton");
+					const emailButton = document.getElementById("emailButton");
+					const auditButton = document.getElementById("auditButton");
+					const submitResponseButton = document.getElementById("submitResponseButton");
+					const submitResponseAdminButton = document.getElementById("submitResponseAdminButton");
+					const copySummaryButton = document.getElementById("copySummaryButton");
+					const submitFeedback = document.getElementById("submitFeedback");
+					const recipientEmail = document.getElementById("recipientEmail");
+					const fields = {
+						costText: document.getElementById("cost-text"),
+						integrationText: document.getElementById("integration-text"),
+						pitchText: document.getElementById("pitch-text"),
+						teddyPainText: document.getElementById("teddy-pain-text"),
+						desjardinsText: document.getElementById("desjardins-text"),
+						processes: Array.from(document.querySelectorAll('input[type="checkbox"]')),
+						priorities: Array.from(document.querySelectorAll('input[name="priority"]')),
+						teddySatisfaction: Array.from(document.querySelectorAll('input[name="teddySatisfaction"]')),
+						desjardinsStatus: Array.from(document.querySelectorAll('input[name="desjardinsStatus"]'))
+					};
+
+					function getState() {
+						return {
+							costText: fields.costText.value.trim(),
+							integrationText: fields.integrationText.value.trim(),
+							pitchText: fields.pitchText.value.trim(),
+							teddyPainText: fields.teddyPainText.value.trim(),
+							desjardinsText: fields.desjardinsText.value.trim(),
+							processes: fields.processes.map((input) => input.checked),
+							radioIndex: fields.priorities.findIndex((input) => input.checked),
+							teddySatisfactionIndex: fields.teddySatisfaction.findIndex((input) => input.checked),
+							desjardinsStatusIndex: fields.desjardinsStatus.findIndex((input) => input.checked),
+							recipientEmail: recipientEmail.value.trim(),
+							updatedAt: new Date().toISOString()
+						};
+					}
+
+					function setState(state) {
+						if (!state) {
+							return;
+						}
+
+						fields.costText.value = state.costText || "";
+						fields.integrationText.value = state.integrationText || "";
+						fields.pitchText.value = state.pitchText || "";
+						fields.teddyPainText.value = state.teddyPainText || "";
+						fields.desjardinsText.value = state.desjardinsText || "";
+
+						state.processes?.forEach((value, index) => {
+							if (fields.processes[index]) {
+								fields.processes[index].checked = value;
+							}
+						});
+
+						fields.priorities.forEach((input, index) => {
+							input.checked = state.radioIndex === index;
+						});
+
+						fields.teddySatisfaction.forEach((input, index) => {
+							input.checked = state.teddySatisfactionIndex === index;
+						});
+
+						fields.desjardinsStatus.forEach((input, index) => {
+							input.checked = state.desjardinsStatusIndex === index;
+						});
+
+						recipientEmail.value = state.recipientEmail || "";
+						if (!state.recipientEmail && presetRecipient) {
+							recipientEmail.value = presetRecipient;
+						}
+					}
+
+					function formatSummary() {
+						const selectedProcess = fields.processes
+							.map((input) => input.closest("label")?.innerText.trim())
+							.filter((_, index) => fields.processes[index]?.checked);
+						const costText = fields.costText.value.trim();
+						const integrations = fields.integrationText.value.trim();
+						const pitchText = fields.pitchText.value.trim();
+						const teddyPainText = fields.teddyPainText.value.trim();
+						const priority = fields.priorities.find((input) => input.checked)?.closest("label")?.innerText.trim() || "Non défini";
+						const teddySatisfaction = fields.teddySatisfaction.find((input) => input.checked)?.closest("label")?.innerText.trim() || "Non défini";
+						const desjardinsStatus = fields.desjardinsStatus.find((input) => input.checked)?.closest("label")?.innerText.trim() || "Non défini";
+						const desjardinsText = fields.desjardinsText.value.trim();
+						const filledFields = [
+							costText,
+							integrations,
+							pitchText,
+							teddyPainText,
+							desjardinsText,
+							priority !== "Non défini" ? priority : "",
+							teddySatisfaction !== "Non défini" ? teddySatisfaction : "",
+							desjardinsStatus !== "Non défini" ? desjardinsStatus : ""
+						].filter(Boolean).length + selectedProcess.length;
+						const status = filledFields === 0 ? "Sauvegarde locale inactive" : "Sauvegardé localement";
+
+						saveStatus.textContent = status;
+						liveSummary.innerHTML = `
+							<h3>Résumé local</h3>
+							<ul>
+								<li><strong>${selectedProcess.length}</strong> processus prioritaires</li>
+								<li><strong>${costText || "À compléter"}</strong></li>
+								<li><strong>${integrations || "À compléter"}</strong></li>
+								<li><strong>${pitchText || "À compléter"}</strong></li>
+								<li><strong>${teddySatisfaction}</strong></li>
+								<li><strong>${desjardinsStatus}</strong></li>
+								<li><strong>${priority}</strong></li>
+							</ul>
+						`;
+					}
+
+					function getSelectedPriority() {
+						return fields.priorities.find((input) => input.checked)?.closest("label")?.innerText.trim() || "Non défini";
+					}
+
+					function getSelectedProcesses() {
+						return fields.processes
+							.map((input) => input.closest("label")?.innerText.trim())
+							.filter((_, index) => fields.processes[index]?.checked);
+					}
+
+					function setSubmitFeedback(type, message) {
+						if (!submitFeedback) {
+							return;
+						}
+
+						submitFeedback.classList.remove("success", "error", "visible");
+						submitFeedback.textContent = message;
+						submitFeedback.classList.add(type, "visible");
+					}
+
+					function clearSubmitFeedback() {
+						if (!submitFeedback) {
+							return;
+						}
+
+						submitFeedback.textContent = "";
+						submitFeedback.classList.remove("success", "error", "visible");
+					}
+
+					function validateSubmission(data) {
+						const missing = [];
+
+						if (!data.processes.length) {
+							missing.push("sélectionner au moins un processus prioritaire");
+						}
+
+						if (!data.costText) {
+							missing.push("décrire ce qui coûte trop cher ou trop de temps");
+						}
+
+						if (data.priority === "Non défini") {
+							missing.push("choisir un niveau de priorité");
+						}
+
+						if (data.teddySatisfaction === "Non défini") {
+							missing.push("indiquer la satisfaction par rapport à Teddy");
+						}
+
+						if (data.desjardinsStatus === "Non défini") {
+							missing.push("indiquer le statut du lien Desjardins");
+						}
+
+						if (data.desjardinsStatus !== "Non défini" && data.desjardinsStatus !== "Oui, le lien est stable" && !data.desjardinsText) {
+							missing.push("ajouter des détails sur le lien Desjardins lorsqu'il y a une interruption");
+						}
+
+						return missing;
+					}
+
+					function buildReportData() {
+						return {
+							processes: getSelectedProcesses(),
+							costText: fields.costText.value.trim(),
+							integrationText: fields.integrationText.value.trim(),
+							pitchText: fields.pitchText.value.trim(),
+							teddySatisfaction: fields.teddySatisfaction.find((input) => input.checked)?.closest("label")?.innerText.trim() || "Non défini",
+							teddyPainText: fields.teddyPainText.value.trim(),
+							desjardinsStatus: fields.desjardinsStatus.find((input) => input.checked)?.closest("label")?.innerText.trim() || "Non défini",
+							desjardinsText: fields.desjardinsText.value.trim(),
+							priority: getSelectedPriority(),
+							recipientEmail: recipientEmail.value.trim(),
+							updatedAt: new Date().toLocaleString("fr-CA")
+						};
+					}
+
+					function buildSummaryText(data) {
+						return [
+							"Diagnostic client - Medialo",
+							`Date: ${data.updatedAt}`,
+							`Processus prioritaires: ${data.processes.join(", ") || "Aucun"}`,
+							`Coûts et irritants: ${data.costText || "À compléter"}`,
+							`Intégrations: ${data.integrationText || "À compléter"}`,
+							`Message de présentation: ${data.pitchText || "À compléter"}`,
+							`Satisfaction Teddy: ${data.teddySatisfaction || "Non défini"}`,
+							`Irritants Teddy: ${data.teddyPainText || "À compléter"}`,
+							`Lien Desjardins: ${data.desjardinsStatus || "Non défini"}`,
+							`Détails Desjardins: ${data.desjardinsText || "À compléter"}`,
+							`Priorité: ${data.priority}`
+						].join("\n");
+					}
+
+					function loadResponseLog() {
+						return JSON.parse(localStorage.getItem(RESPONSE_LOG_KEY) || "[]");
+					}
+
+					function saveResponseLog(entries) {
+						localStorage.setItem(RESPONSE_LOG_KEY, JSON.stringify(entries));
+					}
+
+					function renderResponseLog() {
+						if (!responseLog) {
+							return;
+						}
+
+						const entries = loadResponseLog();
+						if (!entries.length) {
+							responseLog.innerHTML = '<div class="log-entry"><strong>Aucune réponse envoyée</strong><small>La première soumission apparaîtra ici.</small></div>';
+							return;
+						}
+
+						responseLog.innerHTML = entries.slice(-5).reverse().map((entry) => `
+							<div class="log-entry">
+								<strong>${escapeHtml(entry.updatedAt)}</strong>
+								<small>${escapeHtml(entry.summaryLine)}</small>
+							</div>
+						`).join("");
+					}
+
+					function escapeHtml(text) {
+						return String(text)
+							.replaceAll("&", "&amp;")
+							.replaceAll("<", "&lt;")
+							.replaceAll(">", "&gt;")
+							.replaceAll('"', "&quot;")
+							.replaceAll("'", "&#39;");
+					}
+
+					function createReportHtml(data) {
+						const processes = data.processes.length ? data.processes : ["Aucun processus sélectionné"];
+						const processItems = processes.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+						return `<!DOCTYPE html>
+						<html lang="fr">
+						<head>
+							<meta charset="UTF-8" />
+							<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+							<title>Rapport de diagnostic</title>
+							<style>
+								body { font-family: Arial, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+								.page { max-width: 860px; margin: 0 auto; padding: 40px 28px 56px; }
+								h1 { margin: 0 0 10px; font-size: 30px; }
+								p { line-height: 1.6; }
+								.card { margin-top: 18px; padding: 18px 20px; border: 1px solid #dbe3ef; border-radius: 16px; background: white; }
+								h2 { margin: 0 0 10px; font-size: 18px; }
+								ul { margin: 10px 0 0 18px; padding: 0; }
+								.meta { color: #475569; font-size: 14px; }
+								.badge { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #e0f2fe; color: #075985; font-weight: 700; font-size: 12px; letter-spacing: .03em; text-transform: uppercase; }
+								@media print { body { background: white; } .page { padding: 0; } }
+							</style>
+						</head>
+						<body>
+							<div class="page">
+								<div class="badge">Diagnostic client</div>
+								<h1>Rapport de découverte</h1>
+								<p class="meta">Généré le ${escapeHtml(data.updatedAt)}</p>
+								<div class="card">
+									<h2>1. Processus prioritaires</h2>
+									<ul>${processItems}</ul>
+								</div>
+								<div class="card">
+									<h2>2. Coûts et irritants</h2>
+									<p>${escapeHtml(data.costText || "À compléter")}</p>
+								</div>
+								<div class="card">
+									<h2>3. Intégrations essentielles</h2>
+									<p>${escapeHtml(data.integrationText || "À compléter")}</p>
+								</div>
+								<div class="card">
+									<h2>4. Message à montrer au président</h2>
+									<p>${escapeHtml(data.pitchText || "À compléter")}</p>
+								</div>
+								<div class="card">
+									<h2>5. Satisfaction Teddy</h2>
+									<p>${escapeHtml(data.teddySatisfaction || "Non défini")}</p>
+								</div>
+								<div class="card">
+									<h2>6. Irritants Teddy</h2>
+									<p>${escapeHtml(data.teddyPainText || "À compléter")}</p>
+								</div>
+								<div class="card">
+									<h2>7. Lien Desjardins</h2>
+									<p>${escapeHtml(data.desjardinsStatus || "Non défini")}</p>
+								</div>
+								<div class="card">
+									<h2>8. Détails Desjardins</h2>
+									<p>${escapeHtml(data.desjardinsText || "À compléter")}</p>
+								</div>
+								<div class="card">
+									<h2>9. Priorité</h2>
+									<p>${escapeHtml(data.priority)}</p>
+								</div>
+							</div>
+						</body>
+						</html>`;
+					}
+
+					function openPrintWindow() {
+						const data = buildReportData();
+						const existingFrame = document.getElementById("reportFrame");
+						if (existingFrame) {
+							existingFrame.remove();
+						}
+
+						const frame = document.createElement("iframe");
+						frame.id = "reportFrame";
+						frame.style.position = "fixed";
+						frame.style.right = "0";
+						frame.style.bottom = "0";
+						frame.style.width = "0";
+						frame.style.height = "0";
+						frame.style.border = "0";
+						frame.style.visibility = "hidden";
+						frame.srcdoc = createReportHtml(data);
+						document.body.appendChild(frame);
+
+						frame.addEventListener("load", () => {
+							setTimeout(() => {
+								frame.contentWindow?.focus();
+								frame.contentWindow?.print();
+							}, 150);
+						}, { once: true });
+					}
+
+					function prepareEmail() {
+						const data = buildReportData();
+						const subject = encodeURIComponent("Diagnostic client - Medialo");
+						const body = encodeURIComponent(`Voici un premier résumé du diagnostic :\n\n${buildSummaryText(data)}\n\nRéponses capturées depuis le questionnaire local.`);
+						const recipient = data.recipientEmail || "";
+						window.location.href = `mailto:${encodeURIComponent(recipient)}?subject=${subject}&body=${body}`;
+					}
+
+					function addResponseToLog(data) {
+						const entries = loadResponseLog();
+						entries.push({
+							updatedAt: data.updatedAt,
+							summaryLine: `${data.processes.length} processus | ${data.priority}`,
+							data
+						});
+						saveResponseLog(entries);
+						renderResponseLog();
+					}
+
+					function downloadJsonReport(data) {
+						const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+						const link = document.createElement("a");
+						link.href = URL.createObjectURL(blob);
+						link.download = `diagnostic-medialo-${new Date().toISOString().slice(0, 10)}.json`;
+						document.body.appendChild(link);
+						link.click();
+						link.remove();
+						setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+					}
+
+					function updateSubmissionMeta() {
+						document.getElementById("submission-mode").value = mode;
+						document.getElementById("client-timestamp").value = new Date().toISOString();
+						document.getElementById("submission-page").value = window.location.href;
+					}
+
+					function encodeFormData(form) {
+						return new URLSearchParams(new FormData(form)).toString();
+					}
+
+					async function sendResponseToNetlify() {
+						updateSubmissionMeta();
+
+						const response = await fetch(diagnosticForm.action || "/", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/x-www-form-urlencoded"
+							},
+							body: encodeFormData(diagnosticForm)
+						});
+
+						if (!response.ok) {
+							throw new Error(`Netlify returned ${response.status}`);
+						}
+
+						return true;
+					}
+
+					async function copySummary() {
+						const data = buildReportData();
+						try {
+							await navigator.clipboard.writeText(buildSummaryText(data));
+							saveStatus.textContent = "Résumé copié";
+						} catch {
+							alert("La copie automatique a été bloquée. Utilise plutôt l'envoi par courriel ou l'export JSON.");
+						}
+					}
+
+					async function submitResponse(event) {
+						event?.preventDefault();
+						const data = buildReportData();
+						const missing = validateSubmission(data);
+						if (missing.length) {
+							setSubmitFeedback("error", `Le formulaire n'a pas été envoyé. Merci de ${missing.join(", ")}.`);
+							submitFeedback?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+							return;
+						}
+
+						clearSubmitFeedback();
+						let sentToNetlify = false;
+
+						if (diagnosticForm.elements["bot-field"]?.value) {
+							return;
+						}
+
+						try {
+							await sendResponseToNetlify();
+							sentToNetlify = true;
+						} catch (error) {
+							console.warn("Envoi Netlify indisponible, bascule en mode local.", error);
+						}
+
+						addResponseToLog(data);
+
+						if (sentToNetlify) {
+							saveStatus.textContent = "Réponse envoyée";
+							setSubmitFeedback("success", "Merci. Le formulaire a bien été envoyé.");
+							persistState();
+							return;
+						}
+
+						downloadJsonReport(data);
+						if (mode === "admin") {
+							if (!data.recipientEmail) {
+								setSubmitFeedback("error", "Envoi indisponible. Ajoute une adresse de réception pour l'envoi par courriel de secours.");
+								persistState();
+								return;
+							}
+							prepareEmail();
+							setSubmitFeedback("success", "Envoi indisponible: un fichier de secours a été créé et le courriel de suivi est prêt.");
+						} else {
+							setSubmitFeedback("error", "L'envoi n'est pas accessible pour le moment. Un fichier JSON a été téléchargé pour conserver votre réponse.");
+						}
+
+						persistState();
+					}
+
+					function persistState() {
+						localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+						formatSummary();
+					}
+
+					function updateLiveOnInput() {
+						clearSubmitFeedback();
+						persistState();
+					}
+
+					const savedState = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+					setState(savedState);
+					if (!recipientEmail.value && presetRecipient) {
+						recipientEmail.value = presetRecipient;
+					}
+					formatSummary();
+					renderResponseLog();
+
+					[fields.costText, fields.integrationText, fields.pitchText, fields.teddyPainText, fields.desjardinsText].forEach((input) => input.addEventListener("input", updateLiveOnInput));
+					if (recipientEmail) {
+						recipientEmail.addEventListener("input", updateLiveOnInput);
+					}
+					fields.processes.forEach((input) => input.addEventListener("change", updateLiveOnInput));
+					fields.priorities.forEach((input) => input.addEventListener("change", updateLiveOnInput));
+					fields.teddySatisfaction.forEach((input) => input.addEventListener("change", updateLiveOnInput));
+					fields.desjardinsStatus.forEach((input) => input.addEventListener("change", updateLiveOnInput));
+
+					printButton.addEventListener("click", () => window.print());
+					exportPdfButton.addEventListener("click", openPrintWindow);
+					emailButton.addEventListener("click", prepareEmail);
+					diagnosticForm.addEventListener("submit", submitResponse);
+					copySummaryButton?.addEventListener("click", copySummary);
+					auditButton?.addEventListener("click", () => {
+						questionnaire.scrollIntoView({ behavior: "smooth", block: "start" });
+						questionnaire.querySelector("textarea")?.focus();
+					});
+				</script>
+</body>
+</html>
